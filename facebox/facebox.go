@@ -13,16 +13,18 @@ import (
 
 // Face represents a face in an image.
 type Face struct {
-	Rect    Rect
-	ID      string
-	Name    string
-	Matched bool
+	Rect    Rect   `json:"rect"`
+	ID      string `json:"id,omitempty"`
+	Name    string `json:"name,omitempty"`
+	Matched bool   `json:"matched"`
 }
 
 // Rect represents the coordinates of a face within an image.
 type Rect struct {
-	Top, Left     int
-	Width, Height int
+	Top    int `json:"top"`
+	Left   int `json:"left"`
+	Width  int `json:"width"`
+	Height int `json:"height"`
 }
 
 // Similar represents a similar face.

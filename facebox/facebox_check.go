@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"io"
+	"io/ioutil"
 	"mime/multipart"
 	"net/url"
 
@@ -37,6 +38,15 @@ func (c *Client) Check(image io.Reader) ([]Face, error) {
 		return nil, err
 	}
 	defer resp.Body.Close()
+	if resp.StatusCode != 200 {
+		b, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			return nil, err
+		}
+
+		return nil, errors.New(string(b))
+	}
+
 	return c.parseCheckResponse(resp.Body)
 }
 
@@ -62,17 +72,20 @@ func (c *Client) CheckURL(imageURL *url.URL) ([]Face, error) {
 	return c.parseCheckResponse(resp.Body)
 }
 
+type checkResponse struct {
+	Success    bool   `json:"success"`
+	FacesCount int    `json:"facesCount"`
+	Error      string `json:"error,omitempty"`
+	Faces      []Face `json:"faces"`
+}
+
 func (c *Client) parseCheckResponse(r io.Reader) ([]Face, error) {
-	var checkResponse struct {
-		Success bool
-		Error   string
-		Faces   []Face
-	}
-	if err := json.NewDecoder(r).Decode(&checkResponse); err != nil {
+	var resp checkResponse
+	if err := json.NewDecoder(r).Decode(&resp); err != nil {
 		return nil, errors.Wrap(err, "decoding response")
 	}
-	if !checkResponse.Success {
-		return nil, ErrFacebox(checkResponse.Error)
+	if !resp.Success {
+		return nil, ErrFacebox(resp.Error)
 	}
-	return checkResponse.Faces, nil
+	return resp.Faces, nil
 }
